@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (C) 2015-2017 Laird
+** Copyright (C) 2018 Laird
 **
 ** Project: FileSelector
 **
@@ -31,6 +31,8 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.content.Context;
+import android.database.Cursor;
+import android.provider.MediaStore;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -55,14 +57,14 @@ public class FileSelector
         qtContext = cContext;
     }
 
-    public byte[] readFileContents(Uri Filename)
+    public byte[] readFileContents(Uri uriFilename)
     {
         //Read data from a file
         byte[] baFileData = null;
         try
         {
             //Get the file data
-            baFileData = readDataFromUri(qtContext, Filename);
+            baFileData = readDataFromUri(qtContext, uriFilename);
         }
         catch (Exception e)
         {
@@ -87,5 +89,32 @@ public class FileSelector
         //Close the stream and return the byte array
         isStream.close();
         return baosArrayOut.toByteArray();
+    }
+
+    public String getFileName(Uri uriFilename)
+    {
+        //Retrieve the filename of supported content resolvers
+        String strFilename = null;
+        Cursor cuCursor = qtContext.getContentResolver().query(uriFilename, new String[] { MediaStore.Files.FileColumns.DISPLAY_NAME }, null, null, null);
+        if (cuCursor != null)
+        {
+            //Cursor exists, check row count
+            if (cuCursor.getCount() > 0)
+            {
+                //Row exists, move to this row and check column count
+                cuCursor.moveToFirst();
+                if (cuCursor.getColumnCount() > 0)
+                {
+                    //Column exists, get the filename
+                    strFilename = cuCursor.getString(0);
+                }
+            }
+
+            //Close the cursor
+            cuCursor.close();
+        }
+
+        //Return the filename (or null if it wasn't found)
+        return strFilename;
     }
 }
